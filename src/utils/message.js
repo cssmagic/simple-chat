@@ -38,12 +38,13 @@ export async function getResponse(messages) {
 		messages = messages.slice(-11)
 	}
 
-	const completion = await client.chat.completions.create({
+	const stream = await client.chat.completions.create({
 		messages: [
 			{ role: 'system', content: SYSTEM_PROMPT },
 			...messages,
 		],
 		model: MODEL_NAME,
+		stream: true,
 	})
-	return completion.choices[0]?.message?.content || ''
+	return stream
 }

@@ -49,22 +49,40 @@ async function onSubmit() {
 	// 为机器人回复的消息提前占个位
 	$messages.value.push({
 		role: 'assistant',
-		content: '正在思考中...',
+		content: '',
+		status: 'waiting',
 	})
 
 	// 设置加载状态
 	$isLoading.value = true
 	// 获取机器人回复的内容
-	const response = await getResponse($messages.value)
-	// 更新最后一条消息
-	$messages.value[$messages.value.length - 1].content = response
+	const stream = await getResponse($messages.value)
+	// 遍历事件流
+	for await (const chunk of stream) {
+		onReceiveDelta(chunk.choices[0]?.delta?.content || '')
+	}
+	// 事件流结束，更新最后一条消息的状态
+	$messages.value[$messages.value.length - 1].status = 'done'
+	// 恢复状态
+	$isLoading.value = false
+}
 
+function onReceiveDelta(delta) {
+	const lastMessageIndex = $messages.value.length - 1
+	// 如果最后一条消息是占位状态
+	if ($messages.value[lastMessageIndex].status === 'waiting') {
+		// 把占位内容清空
+		$messages.value[lastMessageIndex].content = ''
+		// 消息进入 streaming 状态
+		$messages.value[lastMessageIndex].status = 'streaming'
+	}
+
+	// 更新最后一条消息的内容
+	$messages.value[lastMessageIndex].content += delta
 	// 滚动到消息列表的底部
 	nextTick(() => {
 		scrollToBottom()
 	})
-	// 恢复状态
-	$isLoading.value = false
 }
 
 // 页面加载完成后，消息列表滚动到底部
