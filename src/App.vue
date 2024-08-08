@@ -5,12 +5,65 @@
 -->
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import MessageItem from '@/components/MessageItem.vue'
-// 导入 utils/mock.js 中的 mockDataMessages
 import { mockDataMessages } from '@/utils/mock.js'
+import { getMockResponse } from '@/utils/message.js'
 
 const $messages = ref(mockDataMessages)
+const $messageList = ref(null)
+
+const $inputContent = ref('')
+const $inputElement = ref(null)
+
+function scrollToBottom() {
+	// 消息列表滚动到底部，需要平滑滚动
+	$messageList.value.scrollTo({
+		top: $messageList.value.scrollHeight,
+		behavior: 'smooth',
+	})
+}
+
+async function onSubmit() {
+	// 先把输入框中的内容保存到 content 变量中
+	const content = $inputContent.value.trim()
+	// 如果 content 为空，不做任何处理
+	if (!content) return
+
+	// 把用户消息添加到消息列表中
+	$messages.value.push({
+		role: 'user',
+		content: content,
+	})
+	// 清空输入框
+	$inputContent.value = ''
+	// 滚动到消息列表的底部
+	nextTick(() => {
+		scrollToBottom()
+	})
+
+	// 为机器人回复的消息提前占个位
+	$messages.value.push({
+		role: 'assistant',
+		content: '正在思考中...',
+	})
+	// 获取机器人回复的内容
+	const response = await getMockResponse(content)
+	// 更新最后一条消息
+	$messages.value[$messages.value.length - 1].content = response
+
+	// 滚动到消息列表的底部
+	nextTick(() => {
+		scrollToBottom()
+	})
+
+}
+
+// 页面加载完成后，消息列表滚动到底部
+onMounted(() => {
+	scrollToBottom()
+})
+
 </script>
 
 <template>
@@ -29,7 +82,7 @@ const $messages = ref(mockDataMessages)
 		<header class="h-11 bg-gray-100 border-b flex-none flex items-center justify-center">
 			<h1 class="font-bold text-lg">Simple Chat</h1>
 		</header>
-		<div class="p-5 pb-10 flex-auto overflow-y-auto">
+		<div ref="$messageList" class="p-5 pb-10 flex-auto overflow-y-auto">
 			<MessageItem v-for="message of $messages" :messageItem="message"></MessageItem>
 		</div>
 		<footer class="h-12 border-t flex-none flex items-stretch justify-between">
@@ -37,12 +90,17 @@ const $messages = ref(mockDataMessages)
 				<input
 					class="px-4 w-full h-full outline-0 border-transparent border-2 focus:border-blue-300"
 					placeholder="请输入消息内容"
+					v-model="$inputContent"
+					autofocus
+					ref="$inputElement"
+					@keydown.enter="onSubmit"
 				/>
 			</div>
 			<div class="flex-none">
-				<button class="px-4 size-full bg-blue-500 text-white hover:bg-blue-600">
-					发送
-				</button>
+				<button
+					class="px-4 size-full bg-blue-500 text-white hover:bg-blue-600"
+					@click="onSubmit"
+				>发送</button>
 			</div>
 		</footer>
 	</div>
