@@ -8,13 +8,15 @@
 import { ref, nextTick, onMounted } from 'vue'
 import MessageItem from '@/components/MessageItem.vue'
 import { mockDataMessages } from '@/utils/mock.js'
-import { getMockResponse } from '@/utils/message.js'
+import { getMockResponse, getResponse } from '@/utils/message.js'
 
 const $messages = ref(mockDataMessages)
 const $messageList = ref(null)
 
 const $inputContent = ref('')
 const $inputElement = ref(null)
+
+const $isLoading = ref(false)
 
 function scrollToBottom() {
 	// 消息列表滚动到底部，需要平滑滚动
@@ -37,6 +39,8 @@ async function onSubmit() {
 	})
 	// 清空输入框
 	$inputContent.value = ''
+	// 聚焦输入框
+	$inputElement.value.focus()
 	// 滚动到消息列表的底部
 	nextTick(() => {
 		scrollToBottom()
@@ -47,8 +51,11 @@ async function onSubmit() {
 		role: 'assistant',
 		content: '正在思考中...',
 	})
+
+	// 设置加载状态
+	$isLoading.value = true
 	// 获取机器人回复的内容
-	const response = await getMockResponse(content)
+	const response = await getResponse(content)
 	// 更新最后一条消息
 	$messages.value[$messages.value.length - 1].content = response
 
@@ -56,7 +63,8 @@ async function onSubmit() {
 	nextTick(() => {
 		scrollToBottom()
 	})
-
+	// 恢复状态
+	$isLoading.value = false
 }
 
 // 页面加载完成后，消息列表滚动到底部
@@ -88,7 +96,7 @@ onMounted(() => {
 		<footer class="h-12 border-t flex-none flex items-stretch justify-between">
 			<div class="flex-auto">
 				<input
-					class="px-4 w-full h-full outline-0 border-transparent border-2 focus:border-blue-300"
+					class="px-4 w-full h-full bg-white outline-0 border-transparent border-2 focus:border-blue-300"
 					placeholder="请输入消息内容"
 					v-model="$inputContent"
 					autofocus
@@ -98,8 +106,9 @@ onMounted(() => {
 			</div>
 			<div class="flex-none">
 				<button
-					class="px-4 size-full bg-blue-500 text-white hover:bg-blue-600"
+					class="px-4 size-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
 					@click="onSubmit"
+					:disabled="$isLoading"
 				>发送</button>
 			</div>
 		</footer>
