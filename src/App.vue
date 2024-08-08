@@ -55,7 +55,7 @@ async function onSubmit() {
 	// 设置加载状态
 	$isLoading.value = true
 	// 获取机器人回复的内容
-	const response = await getResponse(content)
+	const response = await getResponse($messages.value)
 	// 更新最后一条消息
 	$messages.value[$messages.value.length - 1].content = response
 
