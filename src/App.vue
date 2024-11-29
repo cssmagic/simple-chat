@@ -67,16 +67,24 @@ async function onSubmit() {
 
 	// 设置加载状态
 	$isLoading.value = true
-	// 获取机器人回复的内容
-	const stream = await getResponse($messages.value)
-	// 遍历事件流
-	for await (const chunk of stream) {
-		onReceiveDelta(chunk.choices[0]?.delta?.content || '')
+
+	try {
+		// 获取机器人回复的内容
+		const stream = await getResponse($messages.value)
+		// 遍历事件流
+		for await (const chunk of stream) {
+			onReceiveDelta(chunk.choices[0]?.delta?.content || '')
+		}
+		// 事件流结束，更新最后一条消息的状态
+		$messages.value[$messages.value.length - 1].status = 'done'
+	} catch (error) {
+		// 发生错误时，更新最后一条消息的内容和状态
+		$messages.value[$messages.value.length - 1].content = `错误：${error.message}`
+		$messages.value[$messages.value.length - 1].status = 'error'
+	} finally {
+		// 恢复状态
+		$isLoading.value = false
 	}
-	// 事件流结束，更新最后一条消息的状态
-	$messages.value[$messages.value.length - 1].status = 'done'
-	// 恢复状态
-	$isLoading.value = false
 }
 
 function onReceiveDelta(delta) {

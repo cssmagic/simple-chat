@@ -13,8 +13,12 @@ defineProps({
 	</div>
 	<div v-else class="mb-5 flex items-center justify-start">
 		<div
-			class="content max-w-[85%] leading-normal px-5 py-3 bg-blue-200 rounded-3xl rounded-bl-none whitespace-pre-wrap"
-			:class="messageItem.status === 'waiting' || messageItem.status === 'streaming' ? 'animate-cursor-flashing' : ''"
+			class="content max-w-[85%] leading-normal px-5 py-3 rounded-3xl rounded-bl-none whitespace-pre-wrap"
+			:class="{
+				'bg-blue-200': messageItem.status !== 'error',
+				'bg-red-200': messageItem.status === 'error',
+				'animate-cursor-flashing': messageItem.status === 'waiting' || messageItem.status === 'streaming',
+			}"
 		>
 			{{ messageItem.content }}
 		</div>
